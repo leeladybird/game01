@@ -1,0 +1,1091 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mtgsa msa! 太魯閣語「老師說」互動教學遊戲</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: #f3f4f6;
+            background-image: radial-gradient(#e5e7eb 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+        /* 太魯閣族傳統菱形紋裝飾 (Truku Pattern) */
+        .truku-border {
+            background-image: linear-gradient(45deg, #b91c1c 25%, transparent 25%), 
+                              linear-gradient(-45deg, #b91c1c 25%, transparent 25%), 
+                              linear-gradient(45deg, transparent 75%, #b91c1c 75%), 
+                              linear-gradient(-45deg, transparent 75%, #b91c1c 75%);
+            background-size: 20px 20px;
+            background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+        }
+        .truku-pattern-bg {
+            background-color: #1e3a1e; /* 深森林綠 */
+            background-image: 
+                /* 菱形編織幾何紋路 */
+                repeating-linear-gradient(45deg, rgba(185, 28, 28, 0.1) 0px, rgba(185, 28, 28, 0.1) 2px, transparent 2px, transparent 10px),
+                repeating-linear-gradient(-45deg, rgba(185, 28, 28, 0.1) 0px, rgba(185, 28, 28, 0.1) 2px, transparent 2px, transparent 10px);
+        }
+        /* 動態氣泡 */
+        .speech-bubble::after {
+            content: '';
+            position: absolute;
+            bottom: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-width: 15px 15px 0;
+            border-style: solid;
+            border-color: #ffffff transparent;
+            display: block;
+            width: 0;
+        }
+        /* 卡片翻轉效果 */
+        .flip-card {
+            background-color: transparent;
+            perspective: 1000px;
+        }
+        .flip-card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            text-align: center;
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+        }
+        .flip-card.flipped .flip-card-inner {
+            transform: rotateY(180deg);
+        }
+        .flip-card-front, .flip-card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+        }
+        .flip-card-back {
+            transform: rotateY(180deg);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between text-gray-800">
+
+    <!-- 頂部導覽列/文化織帶 -->
+    <header class="w-full bg-red-700 text-white relative shadow-md">
+        <!-- 頂部菱形裝飾條 -->
+        <div class="h-3 truku-border bg-white w-full"></div>
+        <div class="max-w-5xl mx-auto px-4 py-4 flex flex-col md:flex-row justify-between items-center z-10">
+            <div class="flex items-center space-x-3">
+                <div class="bg-white text-red-700 p-2 rounded-full font-bold text-xl flex items-center justify-center w-12 h-12 shadow">
+                    ⛰️
+                </div>
+                <div>
+                    <h1 class="text-xl md:text-2xl font-black tracking-wider">Mtgsa msa! 太魯閣語「老師說」</h1>
+                    <p class="text-xs text-red-100 font-medium">單元評量：小勇士聽聽看 (Qbahang binaw!)</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-2 mt-3 md:mt-0">
+                <span id="score-badge" class="bg-yellow-400 text-red-900 px-4 py-1.5 rounded-full font-bold text-sm shadow flex items-center">
+                    <i class="fas fa-trophy mr-1.5"></i> 小勇士積分: <span id="user-score" class="ml-1 text-base">0</span>
+                </span>
+                <button onclick="toggleAudio()" id="audio-toggle-btn" class="bg-red-800 hover:bg-red-900 text-white p-2.5 rounded-full shadow transition-all" title="切換音效">
+                    <i id="audio-icon" class="fas fa-volume-up"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- 主要內容區 -->
+    <main class="flex-grow max-w-5xl w-full mx-auto p-4 flex flex-col justify-center">
+
+        <!-- 1. 遊戲大廳 / 模式選擇 -->
+        <section id="screen-lobby" class="bg-white rounded-3xl shadow-xl overflow-hidden my-6 border-4 border-emerald-800 transition-all">
+            <!-- 橫幅 -->
+            <div class="truku-pattern-bg text-white p-8 text-center relative">
+                <div class="absolute top-4 left-4 bg-red-600 text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">Truku Language</div>
+                <h2 class="text-3xl md:text-5xl font-black mt-2 tracking-widest text-yellow-300">Mtgsa msa!</h2>
+                <p class="text-lg md:text-xl font-medium mt-1 text-gray-200">太魯閣語「老師說」</p>
+                <div class="mt-4 flex justify-center space-x-1 text-red-400">
+                    <span class="text-xl">◆</span><span class="text-xl">◆</span><span class="text-xl">◆</span><span class="text-xl">◆</span><span class="text-xl">◆</span><span class="text-xl">◆</span><span class="text-xl">◆</span>
+                </div>
+            </div>
+
+            <div class="p-6 md:p-8">
+                <!-- 遊戲說明 -->
+                <div class="bg-emerald-50 border-l-4 border-emerald-600 p-4 rounded-r-xl mb-6">
+                    <h3 class="font-bold text-emerald-900 text-lg flex items-center">
+                        <i class="fas fa-info-circle mr-2 text-emerald-600"></i> 遊戲規則與評量目標：
+                    </h3>
+                    <p class="text-emerald-800 text-sm mt-1 leading-relaxed">
+                        本遊戲評量學生能否準確聽辨並執行太魯閣語的動作指令。
+                        <br><strong>規則：</strong>當老師說出「<span class="font-bold text-red-600">Mtgsa msa...</span>（老師說...）」並接動作指令時，請點擊對應的動作。
+                        如果老師<strong>直接說出動作指令</strong>，前面沒有接「老師說」，請維持原狀不動（點擊「<span class="font-bold text-emerald-700">維持不動</span>」）！
+                        答錯將會進入「小挑戰」問候語練習哦！
+                    </p>
+                </div>
+
+                <!-- 模式選單 -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- 左：學習模式 -->
+                    <div class="border-2 border-dashed border-gray-200 rounded-2xl p-6 hover:border-emerald-500 hover:bg-emerald-50/30 transition-all flex flex-col justify-between group">
+                        <div>
+                            <div class="w-12 h-12 rounded-xl bg-emerald-100 flex items-center justify-center text-emerald-700 text-2xl group-hover:scale-110 transition-transform">
+                                <i class="fas fa-book-open"></i>
+                            </div>
+                            <h3 class="text-xl font-bold text-gray-800 mt-4">1. 指令特訓學習卡</h3>
+                            <p class="text-sm text-gray-500 mt-2 leading-relaxed">在進行聽力挑戰前，先來認識這 8 個核心的太魯閣語動作指令。配有語音發音與中文翻譯，點擊卡片還可以查看發音引導喔！</p>
+                        </div>
+                        <button onclick="switchScreen('screen-learn')" class="w-full mt-6 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-6 rounded-xl shadow-md transition-all flex items-center justify-center space-x-2">
+                            <span>進入學習特訓</span>
+                            <i class="fas fa-arrow-right"></i>
+                        </button>
+                    </div>
+
+                    <!-- 右：挑戰模式 -->
+                    <div class="border-2 border-dashed border-gray-200 rounded-2xl p-6 hover:border-red-500 hover:bg-red-50/30 transition-all flex flex-col justify-between group">
+                        <div>
+                            <div class="w-12 h-12 rounded-xl bg-red-100 flex items-center justify-center text-red-600 text-2xl group-hover:scale-110 transition-transform">
+                                <i class="fas fa-gamepad"></i>
+                            </div>
+                            <h3 class="text-xl font-bold text-gray-800 mt-4">2. 小勇士聽聽看 (Qbahang binaw!)</h3>
+                            <p class="text-sm text-gray-500 mt-2 leading-relaxed">實戰評量！聽聽看老師有沒有說「Mtgsa msa」，在緊張的倒數計時中做出最準確的判斷，挑戰最高分，獲得部落小勇士勳章！</p>
+                        </div>
+                        <button onclick="startPlayGame()" class="w-full mt-6 bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-xl shadow-md transition-all flex items-center justify-center space-x-2">
+                            <span>開始小勇士評量</span>
+                            <i class="fas fa-play"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 底部裝飾線 -->
+                <div class="mt-8 pt-6 border-t border-gray-100 flex justify-between items-center text-xs text-gray-400">
+                    <span>指導單位：原住民族委員會 / 教育部</span>
+                    <span>太魯閣語：Kari Truku</span>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- 2. 學習特訓卡片畫面 -->
+        <section id="screen-learn" class="hidden bg-white rounded-3xl shadow-xl overflow-hidden my-6 border-4 border-emerald-800">
+            <div class="bg-emerald-800 text-white p-6 flex justify-between items-center">
+                <div class="flex items-center space-x-3">
+                    <button onclick="switchScreen('screen-lobby')" class="bg-emerald-900 hover:bg-emerald-950 text-white px-3 py-1.5 rounded-lg text-sm transition-all">
+                        <i class="fas fa-chevron-left mr-1"></i> 返回大廳
+                    </button>
+                    <h2 class="text-xl font-bold tracking-wider">太魯閣語指令卡學習</h2>
+                </div>
+                <div class="text-xs bg-emerald-700 px-3 py-1.5 rounded-full font-bold">共 8 個核心動作指令</div>
+            </div>
+
+            <div class="p-6">
+                <!-- 指令卡格 -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4" id="learn-cards-grid">
+                    <!-- Cards will be dynamically generated by JS -->
+                </div>
+
+                <!-- 底部操作 -->
+                <div class="mt-8 p-4 bg-gray-50 rounded-2xl flex flex-col md:flex-row justify-between items-center gap-4">
+                    <div class="flex items-center space-x-2 text-sm text-gray-500">
+                        <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                        <span>點擊卡片上的「<i class="fas fa-volume-up"></i> 播放」可聆聽真人模擬發音，點擊卡片可翻看記憶小撇步。</span>
+                    </div>
+                    <button onclick="startPlayGame()" class="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-8 rounded-xl shadow-lg transition-all flex items-center space-x-2 w-full md:w-auto justify-center">
+                        <span>我學好了！去挑戰</span>
+                        <i class="fas fa-rocket"></i>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- 3. 遊戲進行中畫面 -->
+        <section id="screen-game" class="hidden bg-white rounded-3xl shadow-xl overflow-hidden my-6 border-4 border-red-700">
+            <!-- 頂部進度與生命 -->
+            <div class="bg-red-700 text-white px-6 py-4 flex flex-wrap justify-between items-center gap-2 border-b-2 border-red-800">
+                <div class="flex items-center space-x-4">
+                    <span class="text-sm font-bold bg-red-800 px-3 py-1 rounded-full">
+                        題次：<span id="game-question-num" class="text-yellow-300">1</span>/10
+                    </span>
+                    <div class="flex items-center space-x-1" id="hearts-container">
+                        <!-- Hearts dynamically generated -->
+                    </div>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <!-- 倒數計時 -->
+                    <div class="flex items-center space-x-2 bg-red-900 px-4 py-1.5 rounded-full border border-red-600">
+                        <i class="far fa-clock text-yellow-300 animate-pulse"></i>
+                        <span class="text-xs font-bold text-gray-200">剩餘時間:</span>
+                        <span id="game-timer" class="text-lg font-black text-yellow-300 w-6 text-center">10</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 老師角色展示區 (關鍵發言) -->
+            <div class="bg-slate-50 p-6 flex flex-col items-center justify-center relative min-h-[250px] border-b border-gray-100">
+                
+                <!-- 老師 SVG 與氣泡對話 -->
+                <div class="w-full max-w-lg flex flex-col items-center">
+                    <!-- 語音氣泡 -->
+                    <div class="w-full bg-white border-2 border-red-600 rounded-3xl p-5 mb-4 shadow-md relative text-center min-h-[90px] flex flex-col justify-center items-center">
+                        <div id="teacher-command-container" class="space-y-1">
+                            <!-- 老師說出的話 -->
+                            <p id="teacher-bubble-prefix" class="text-red-600 font-extrabold text-lg md:text-xl tracking-wider"></p>
+                            <p id="teacher-bubble-cmd" class="text-gray-900 font-black text-2xl md:text-4xl tracking-widest"></p>
+                        </div>
+                        
+                        <!-- 播放按鈕 -->
+                        <button onclick="replayCurrentCommand()" class="absolute right-4 bottom-4 bg-red-100 hover:bg-red-200 text-red-700 p-2 rounded-full text-xs transition-all flex items-center space-x-1" title="重聽一次">
+                            <i class="fas fa-volume-up"></i>
+                            <span class="text-[10px] font-bold">重聽</span>
+                        </button>
+                    </div>
+
+                    <!-- 老師角色 (SVG向量圖形) -->
+                    <div class="flex flex-col items-center">
+                        <div class="relative w-28 h-28 bg-emerald-100 rounded-full border-4 border-emerald-700 flex items-center justify-center shadow-inner overflow-hidden">
+                            <!-- 傳統太魯閣頭飾與人物 -->
+                            <svg class="w-24 h-24 mt-2" viewBox="0 0 100 100">
+                                <!-- 頭部 -->
+                                <circle cx="50" cy="45" r="22" fill="#ffdbac"/>
+                                <!-- 傳統額帶/頭飾 -->
+                                <path d="M 28 35 Q 50 25 72 35 L 72 29 Q 50 19 28 29 Z" fill="#b91c1c"/>
+                                <!-- 額帶菱形斑紋 -->
+                                <polygon points="35,31 40,28 45,31 40,34" fill="#ffffff" />
+                                <polygon points="45,30 50,27 55,30 50,33" fill="#ffffff" />
+                                <polygon points="55,31 60,28 65,31 60,34" fill="#ffffff" />
+                                <!-- 眼睛 -->
+                                <circle cx="42" cy="43" r="2.5" fill="#1e293b"/>
+                                <circle cx="58" cy="43" r="2.5" fill="#1e293b"/>
+                                <!-- 腮紅 -->
+                                <circle cx="36" cy="49" r="3" fill="#f87171" opacity="0.6"/>
+                                <circle cx="64" cy="49" r="3" fill="#f87171" opacity="0.6"/>
+                                <!-- 嘴巴 (會依狀態改變) -->
+                                <path id="teacher-mouth" d="M 44 54 Q 50 62 56 54" fill="none" stroke="#1e293b" stroke-width="2.5" stroke-linecap="round"/>
+                                <!-- 傳統太魯閣耳飾 -->
+                                <line x1="27" y1="46" x2="25" y2="56" stroke="#b91c1c" stroke-width="3" stroke-linecap="round" />
+                                <line x1="73" y1="46" x2="75" y2="56" stroke="#b91c1c" stroke-width="3" stroke-linecap="round" />
+                                <!-- 衣服 (紅色為底的編織服) -->
+                                <path d="M 24 85 Q 50 70 76 85 C 76 95 24 95 24 85" fill="#b91c1c" />
+                                <!-- 白條紋 -->
+                                <path d="M 40 76 L 50 90 L 60 76" fill="none" stroke="#ffffff" stroke-width="3" />
+                            </svg>
+                        </div>
+                        <span class="text-xs font-bold text-emerald-800 bg-emerald-100 px-3 py-1 rounded-full mt-2 border border-emerald-200">
+                            主令官：Mtgsa (教師)
+                        </span>
+                    </div>
+                </div>
+
+                <!-- 倒數進度條 -->
+                <div class="absolute bottom-0 left-0 h-1.5 bg-red-600 transition-all duration-100" id="timer-progress-bar" style="width: 100%;"></div>
+            </div>
+
+            <!-- 學生答題選項區 -->
+            <div class="p-6 bg-gray-50">
+                <div class="text-center mb-4">
+                    <p class="text-sm font-bold text-gray-500">聽清楚指令，做出合適的動作！</p>
+                </div>
+
+                <!-- 動作選擇九宮格 -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4" id="game-options-grid">
+                    <!-- 8 個動作選項 + 1 個「維持不動」特殊選項 (動態載入) -->
+                </div>
+
+                <!-- 特殊選項：「維持不動」防守按鈕 -->
+                <div class="mt-6 flex justify-center">
+                    <button onclick="handleOptionClick('STAY_STILL')" class="w-full max-w-md bg-stone-700 hover:bg-stone-800 text-white font-extrabold py-4 px-8 rounded-2xl shadow-lg border-b-4 border-stone-900 active:transform active:translate-y-1 transition-all flex items-center justify-center space-x-3 text-lg md:text-xl">
+                        <span class="text-2xl">🛑</span>
+                        <span>維持原狀不動！</span>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- 4. 小挑戰畫面（答錯時的補救教學） -->
+        <section id="screen-challenge" class="hidden bg-white rounded-3xl shadow-xl overflow-hidden my-6 border-4 border-yellow-500">
+            <div class="bg-yellow-500 text-red-950 p-6 text-center">
+                <div class="text-4xl mb-2">💡</div>
+                <h2 class="text-2xl font-black tracking-wider">小勇士的考驗！</h2>
+                <p class="text-sm font-medium mt-1">哎呀！剛剛的動作指令聽錯囉！完成下面這句太魯閣問候語挑戰即可繼續前進！</p>
+            </div>
+
+            <div class="p-6 md:p-8 flex flex-col items-center justify-center">
+                <!-- 隨機挑戰句卡片 -->
+                <div class="bg-yellow-50 border-2 border-yellow-400 rounded-2xl p-6 w-full max-w-lg text-center shadow-inner mb-6">
+                    <span class="bg-yellow-200 text-yellow-900 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">跟著唸唸看 (Rngaw daka!)</span>
+                    
+                    <h3 id="challenge-phrase-indigenous" class="text-2xl md:text-3xl font-black text-red-700 mt-4 tracking-wide"></h3>
+                    <p id="challenge-phrase-chinese" class="text-gray-600 font-medium mt-2 text-sm md:text-base"></p>
+                    
+                    <!-- 播放按鈕 -->
+                    <button onclick="speakChallengePhrase()" class="mt-4 bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 px-6 rounded-full text-sm shadow transition-all flex items-center space-x-2 mx-auto">
+                        <i class="fas fa-volume-up"></i>
+                        <span>聽聽發音與跟讀</span>
+                    </button>
+                </div>
+
+                <!-- 手繪風挑戰確認按鈕 -->
+                <button onclick="completeChallenge()" class="w-full max-w-sm bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold py-4 px-8 rounded-2xl shadow-lg transition-all flex items-center justify-center space-x-3 text-lg">
+                    <i class="fas fa-check-circle text-xl"></i>
+                    <span>我大聲說出來了！繼續遊戲</span>
+                </button>
+            </div>
+        </section>
+
+
+        <!-- 5. 遊戲結算報告畫面 -->
+        <section id="screen-result" class="hidden bg-white rounded-3xl shadow-xl overflow-hidden my-6 border-4 border-emerald-800">
+            <!-- 橫幅 -->
+            <div class="truku-pattern-bg text-white p-8 text-center relative">
+                <h2 class="text-3xl md:text-5xl font-black mt-2 tracking-widest text-yellow-300">結算報告</h2>
+                <p class="text-lg md:text-xl font-medium mt-1 text-gray-200">Qbahang binaw! 小勇士聽力評量</p>
+            </div>
+
+            <div class="p-6 md:p-8">
+                <!-- 綜合評鑑 -->
+                <div class="flex flex-col items-center text-center py-6 border-b border-gray-100">
+                    <div id="result-medal" class="text-7xl mb-4 animate-bounce">🥇</div>
+                    <h3 id="result-title" class="text-2xl md:text-3xl font-black text-gray-800">超級太魯閣聽力大師！</h3>
+                    <p id="result-desc" class="text-gray-500 mt-2 max-w-lg text-sm md:text-base"></p>
+
+                    <!-- 分數展示 -->
+                    <div class="flex space-x-6 mt-6">
+                        <div class="bg-gray-50 px-6 py-3 rounded-2xl border border-gray-100 shadow-sm">
+                            <span class="text-xs font-bold text-gray-400 block">答對題數</span>
+                            <span id="result-correct-count" class="text-3xl font-black text-emerald-600">0 / 10</span>
+                        </div>
+                        <div class="bg-gray-50 px-6 py-3 rounded-2xl border border-gray-100 shadow-sm">
+                            <span class="text-xs font-bold text-gray-400 block">最終積分</span>
+                            <span id="result-score" class="text-3xl font-black text-red-600">0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 單字答題分析 -->
+                <div class="mt-6">
+                    <h4 class="font-bold text-gray-800 text-lg mb-3 flex items-center">
+                        <i class="fas fa-chart-bar mr-2 text-emerald-600"></i> 各動作指令精熟度分析
+                    </h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="result-analysis-grid">
+                        <!-- Dynamic analysis will be here -->
+                    </div>
+                </div>
+
+                <!-- 底部按鈕群 -->
+                <div class="mt-8 pt-6 border-t border-gray-100 flex flex-col sm:flex-row justify-center items-center gap-4">
+                    <button onclick="switchScreen('screen-lobby')" class="w-full sm:w-auto bg-gray-500 hover:bg-gray-600 text-white font-bold py-3.5 px-8 rounded-xl transition-all shadow-md">
+                        返回主畫面
+                    </button>
+                    <button onclick="startPlayGame()" class="w-full sm:w-auto bg-red-600 hover:bg-red-700 text-white font-bold py-3.5 px-8 rounded-xl transition-all shadow-md flex items-center justify-center space-x-2">
+                        <i class="fas fa-undo"></i>
+                        <span>重新挑戰</span>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- 底部資訊與鳴謝 -->
+    <footer class="w-full bg-emerald-900 text-emerald-100 py-4 relative text-center text-xs">
+        <div class="max-w-5xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-2">
+            <p>© 2026 太魯閣語「老師說」互動學習網頁. 版權所有.</p>
+            <p>本數位評量教材依據太魯閣族文化與動作指令開發，旨在推廣族語教育。</p>
+        </div>
+    </footer>
+
+    <!-- 反饋提示元件 (取代原生 Alert) -->
+    <div id="toast-message" class="fixed top-24 left-1/2 transform -translate-x-1/2 -translate-y-10 opacity-0 bg-gray-900 text-white px-6 py-3 rounded-full shadow-2xl z-50 transition-all duration-300 flex items-center space-x-2 pointer-events-none">
+        <span id="toast-icon" class="text-lg">✔️</span>
+        <span id="toast-text" class="font-bold text-sm">操作成功！</span>
+    </div>
+
+    <!-- 音訊播放元件 -->
+    <audio id="sound-correct" src="https://assets.mixkit.co/active_storage/sfx/2000/2000-84.wav" preload="auto"></audio>
+    <audio id="sound-wrong" src="https://assets.mixkit.co/active_storage/sfx/2869/2869-84.wav" preload="auto"></audio>
+    <audio id="sound-timeup" src="https://assets.mixkit.co/active_storage/sfx/1014/1014-84.wav" preload="auto"></audio>
+
+    <script>
+        // --- 遊戲核心資料集 (太魯閣語指令) ---
+        const COMMANDS = [
+            {
+                id: "hiyug",
+                indigenous: "Hiyug!",
+                chinese: "起立！",
+                icon: "🚶‍♂️",
+                desc: "聽到「Mtgsa msa: Hiyug!」要立刻站立起來喔！",
+                pronounceHint: "吸有克"
+            },
+            {
+                id: "tluung",
+                indigenous: "Tluung!",
+                chinese: "坐下！",
+                icon: "🪑",
+                desc: "聽到「Mtgsa msa: Tluung!」要立刻做出坐下的動作！",
+                pronounceHint: "得路恩"
+            },
+            {
+                id: "qbahang",
+                indigenous: "Qbahang!",
+                chinese: "聽！",
+                icon: "👂",
+                desc: "聽到「Mtgsa msa: Qbahang!」請把手放在耳朵旁做傾聽狀！",
+                pronounceHint: "歌巴昂"
+            },
+            {
+                id: "rngaw",
+                indigenous: "Rngaw!",
+                chinese: "說！",
+                icon: "🗣️",
+                desc: "聽到「Mtgsa msa: Rngaw!」請把手圈在嘴巴旁大聲說話！",
+                pronounceHint: "冷奧"
+            },
+            {
+                id: "iyah_hini",
+                indigenous: "Iyah hini!",
+                chinese: "過來這裡！",
+                icon: "👋",
+                desc: "聽到「Mtgsa msa: Iyah hini!」請做出招手呼喚人過來的動作！",
+                pronounceHint: "伊雅 希尼"
+            },
+            {
+                id: "qita_binaw",
+                indigenous: "Qita binaw!",
+                chinese: "看一看！",
+                icon: "👀",
+                desc: "聽到「Mtgsa msa: Qita binaw!」請將雙手比作眼鏡看著前方！",
+                pronounceHint: "基達 逼鬧"
+            },
+            {
+                id: "spug",
+                indigenous: "Spug!",
+                chinese: "唸（數）！",
+                icon: "🔢",
+                desc: "聽到「Mtgsa msa: Spug!」請手比手指頭數數、做閱讀唸書狀！",
+                pronounceHint: "斯不各"
+            }
+        ];
+
+        // --- 答錯時的隨機小挑戰（族語問候語與祝福） ---
+        const CHALLENGES = [
+            { indigenous: "Malu su balay!", chinese: "你好嗎？（非常讚許之意）" },
+            { indigenous: "Mhway su balay!", chinese: "非常謝謝你！" },
+            { indigenous: "Swayay ta da!", chinese: "再見了（我們再會）！" },
+            { indigenous: "Embiyax su hug?", chinese: "你身體健康嗎？（問候語）" },
+            { indigenous: "Embiyax ku balay!", chinese: "我非常健康（回答）！" },
+            { indigenous: "Maku qrinuc sun!", chinese: "辛苦你了！" }
+        ];
+
+        // --- 狀態控制變數 ---
+        let currentScreen = "screen-lobby";
+        let isAudioEnabled = true;
+        let score = 0;
+        let lives = 3;
+        let currentQuestionIndex = 0;
+        const totalQuestions = 10;
+        
+        // 題目紀錄 (用於結算分析)
+        let gameHistory = []; // { command, hasTeacherSay, userChoice, isCorrect }
+        
+        // 計時器
+        let gameTimerInterval = null;
+        let remainingTime = 10; // 每題 10 秒
+        const maxTimePerQuestion = 10;
+        
+        // 當前題目細節
+        let currentQuestion = {
+            command: null,      // 正確的指令物件
+            hasTeacherSay: false // 老師是否有說 "Mtgsa msa:"
+        };
+
+        // --- 初始化載入 ---
+        window.onload = function() {
+            renderLearnCards();
+            updateScoreDisplay();
+            // 初次進入大廳
+            switchScreen('screen-lobby');
+        };
+
+        // --- 畫面切換系統 ---
+        function switchScreen(screenId) {
+            // 隱藏所有畫面
+            document.getElementById('screen-lobby').classList.add('hidden');
+            document.getElementById('screen-learn').classList.add('hidden');
+            document.getElementById('screen-game').classList.add('hidden');
+            document.getElementById('screen-challenge').classList.add('hidden');
+            document.getElementById('screen-result').classList.add('hidden');
+
+            // 顯示指定畫面
+            document.getElementById(screenId).classList.remove('hidden');
+            currentScreen = screenId;
+
+            // 清理計時器
+            if (screenId !== 'screen-game') {
+                clearInterval(gameTimerInterval);
+            }
+        }
+
+        // --- 切換音效開關 ---
+        function toggleAudio() {
+            isAudioEnabled = !isAudioEnabled;
+            const icon = document.getElementById('audio-icon');
+            const btn = document.getElementById('audio-toggle-btn');
+            if (isAudioEnabled) {
+                icon.className = "fas fa-volume-up";
+                btn.className = "bg-red-800 hover:bg-red-900 text-white p-2.5 rounded-full shadow transition-all";
+                showToast("🔊 音效已開啟", "success");
+            } else {
+                icon.className = "fas fa-volume-mute";
+                btn.className = "bg-gray-600 hover:bg-gray-700 text-white p-2.5 rounded-full shadow transition-all";
+                showToast("🔇 音效已關閉", "info");
+            }
+        }
+
+        // --- 提示框元件 (替代 Alert) ---
+        function showToast(text, type = "success") {
+            const toast = document.getElementById('toast-message');
+            const toastText = document.getElementById('toast-text');
+            const toastIcon = document.getElementById('toast-icon');
+
+            toastText.innerText = text;
+            if (type === "success") {
+                toastIcon.innerText = "💚";
+                toast.className = "fixed top-24 left-1/2 transform -translate-x-1/2 bg-emerald-600 text-white px-6 py-3 rounded-full shadow-2xl z-50 transition-all duration-300 flex items-center space-x-2";
+            } else if (type === "error") {
+                toastIcon.innerText = "❤️";
+                toast.className = "fixed top-24 left-1/2 transform -translate-x-1/2 bg-red-600 text-white px-6 py-3 rounded-full shadow-2xl z-50 transition-all duration-300 flex items-center space-x-2";
+            } else {
+                toastIcon.innerText = "ℹ️";
+                toast.className = "fixed top-24 left-1/2 transform -translate-x-1/2 bg-blue-600 text-white px-6 py-3 rounded-full shadow-2xl z-50 transition-all duration-300 flex items-center space-x-2";
+            }
+
+            // 動態滑入
+            toast.style.opacity = "1";
+            toast.style.transform = "translate(-50%, 0px)";
+
+            setTimeout(() => {
+                toast.style.opacity = "0";
+                toast.style.transform = "translate(-50%, -10px)";
+            }, 2500);
+        }
+
+        // --- 播放音效輔助 ---
+        function playSfx(id) {
+            if (!isAudioEnabled) return;
+            const sfx = document.getElementById(id);
+            if (sfx) {
+                sfx.currentTime = 0;
+                sfx.play().catch(e => console.log("音效播不出來：", e));
+            }
+        }
+
+        // --- 語音發音系統 (TTS - 包含太魯閣語優化) ---
+        function speakTruku(text, callback) {
+            if (!window.speechSynthesis) {
+                if (callback) callback();
+                return;
+            }
+
+            // 太魯閣語羅馬字發音微調
+            // 太魯閣語中有些字母如 'y' 發近「一」,'q' 是喉塞音(可用重讀發k或g替代)
+            let speechText = text;
+            
+            // 替換部分單字發音讓 Speech Synthesis 發音稍微流暢 (模擬太魯閣語聲調)
+            speechText = speechText
+                .replace(/Mtgsa/g, "Me teg sa")
+                .replace(/msa/g, "m sa")
+                .replace(/Hiyug/g, "hee yug")
+                .replace(/Tluung/g, "te lung")
+                .replace(/Qbahang/g, "k ba hang")
+                .replace(/Rngaw/g, "reng aw")
+                .replace(/Iyah hini/g, "ee-yah hee-nee")
+                .replace(/Qita binaw/g, "kee-tah bee-now")
+                .replace(/Spug/g, "se bug")
+                .replace(/Malu balay/g, "mah-loo bah-lie")
+                .replace(/Malu ka nii/g, "mah-loo kah nee")
+                .replace(/Uxay kiya/g, "ooh-sigh kee-yah")
+                .replace(/Aji/g, "Ah gee");
+
+            const utterance = new SpeechSynthesisUtterance(speechText);
+            
+            // 嘗試尋找適合的原住民語/印尼語/西班牙語等偏好語音腔調
+            const voices = window.speechSynthesis.getVoices();
+            // 在許多裝置上，印尼語 (id-ID) 或者是西班牙語 (es-ES) / 義大利語 (it-IT) 的羅馬字發音與原住民羅馬字發音極其相似
+            let targetVoice = voices.find(v => v.lang.startsWith('id') || v.lang.startsWith('it') || v.lang.startsWith('es'));
+            
+            if (targetVoice) {
+                utterance.voice = targetVoice;
+            }
+            
+            utterance.rate = 0.85; // 稍微慢一點以便聽清楚
+            utterance.pitch = 1.1; // 輕快明亮的聲音
+
+            utterance.onend = () => {
+                if (callback) callback();
+            };
+
+            window.speechSynthesis.speak(utterance);
+        }
+
+        // --- 渲染「認識指令」學習卡 ---
+        function renderLearnCards() {
+            const container = document.getElementById('learn-cards-grid');
+            container.innerHTML = '';
+
+            COMMANDS.forEach((cmd, idx) => {
+                const card = document.createElement('div');
+                card.className = "flip-card h-64 cursor-pointer";
+                card.id = `learn-card-${cmd.id}`;
+                
+                card.innerHTML = `
+                    <div class="flip-card-inner shadow-md rounded-2xl border-2 border-emerald-100 bg-white hover:border-emerald-500 transition-all">
+                        <!-- 正面 -->
+                        <div class="flip-card-front p-4 flex flex-col justify-between h-full">
+                            <div class="text-right">
+                                <span class="bg-emerald-50 text-emerald-800 text-xs font-bold px-2 py-1 rounded-md">指令 ${idx + 1}</span>
+                            </div>
+                            <div class="flex flex-col items-center">
+                                <span class="text-4xl my-2">${cmd.icon}</span>
+                                <h3 class="text-xl font-black text-emerald-900 tracking-wider">${cmd.indigenous}</h3>
+                                <p class="text-sm font-bold text-gray-500 mt-1">${cmd.chinese}</p>
+                            </div>
+                            <!-- 播放與翻轉按鈕 -->
+                            <div class="flex space-x-2 mt-2">
+                                <button onclick="event.stopPropagation(); speakTruku('${cmd.indigenous}')" class="flex-1 bg-emerald-100 hover:bg-emerald-200 text-emerald-800 text-xs font-bold py-1.5 rounded-lg flex items-center justify-center space-x-1 transition-all">
+                                    <i class="fas fa-volume-up"></i>
+                                    <span>播放發音</span>
+                                </button>
+                                <button onclick="toggleCardFlip('${cmd.id}')" class="bg-gray-100 hover:bg-gray-200 text-gray-700 p-1.5 rounded-lg text-xs" title="查看拼音引導">
+                                    <i class="fas fa-sync-alt"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <!-- 反面 -->
+                        <div class="flip-card-back p-4 bg-emerald-50 rounded-2xl flex flex-col justify-between h-full border-2 border-emerald-500">
+                            <div>
+                                <h4 class="text-emerald-950 font-bold text-base mb-1">💡 拼音發音提示</h4>
+                                <p class="text-xs text-gray-500 mb-3 bg-white py-1.5 rounded-md border border-emerald-100">中文擬音：<span class="text-red-600 font-extrabold text-sm">${cmd.pronounceHint}</span></p>
+                                <h4 class="text-emerald-950 font-bold text-xs text-left mb-1">📌 文化/動作引導</h4>
+                                <p class="text-xs text-emerald-800 text-left leading-relaxed">${cmd.desc}</p>
+                            </div>
+                            <button onclick="toggleCardFlip('${cmd.id}')" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold py-1.5 rounded-lg transition-all">
+                                返回卡片
+                            </button>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        // 翻轉卡片
+        function toggleCardFlip(id) {
+            const card = document.getElementById(`learn-card-${id}`);
+            if (card) {
+                card.classList.toggle('flipped');
+            }
+        }
+
+
+        // --- 遊戲模式：小勇士聽力挑戰 ---
+
+        // 初始化/重置挑戰
+        function startPlayGame() {
+            score = 0;
+            lives = 3;
+            currentQuestionIndex = 0;
+            gameHistory = [];
+            
+            updateScoreDisplay();
+            switchScreen('screen-game');
+            generateQuestion();
+        }
+
+        // 更新生命值愛心顯示
+        function renderHearts() {
+            const container = document.getElementById('hearts-container');
+            container.innerHTML = '';
+            for (let i = 0; i < 3; i++) {
+                const heart = document.createElement('i');
+                if (i < lives) {
+                    heart.className = "fas fa-heart text-red-500 text-lg mr-0.5 filter drop-shadow";
+                } else {
+                    heart.className = "far fa-heart text-red-300 text-lg mr-0.5 opacity-50";
+                }
+                container.appendChild(heart);
+            }
+        }
+
+        // 產生一道新問題
+        function generateQuestion() {
+            if (currentQuestionIndex >= totalQuestions || lives <= 0) {
+                endGame();
+                return;
+            }
+
+            currentQuestionIndex++;
+            document.getElementById('game-question-num').innerText = currentQuestionIndex;
+            renderHearts();
+
+            // 1. 隨機決定要出哪一個動作指令
+            const randomCmd = COMMANDS[Math.floor(Math.random() * COMMANDS.length)];
+            
+            // 2. 隨機決定老師是否有說 "Mtgsa msa" (機率為 60% 說，40% 不說)
+            const hasTeacherSay = Math.random() < 0.6;
+
+            currentQuestion = {
+                command: randomCmd,
+                hasTeacherSay: hasTeacherSay
+            };
+
+            // 3. 更新 UI 介面文字
+            const prefixEl = document.getElementById('teacher-bubble-prefix');
+            const cmdEl = document.getElementById('teacher-bubble-cmd');
+            
+            if (hasTeacherSay) {
+                prefixEl.innerText = "Mtgsa msa:";
+                cmdEl.innerText = `「 ${randomCmd.indigenous} 」`;
+                cmdEl.className = "text-red-700 font-black text-2xl md:text-4xl tracking-widest";
+            } else {
+                prefixEl.innerText = "(沒有說老師說！)";
+                cmdEl.innerText = `「 ${randomCmd.indigenous} 」`;
+                cmdEl.className = "text-gray-900 font-black text-2xl md:text-4xl tracking-widest";
+            }
+
+            // 修改老師嘴巴形狀為說話中 (張開)
+            document.getElementById('teacher-mouth').setAttribute('d', 'M 40 56 Q 50 66 60 56 Z');
+
+            // 4. 渲染答題按鈕 (8 個動作打散亂序)
+            renderGameOptions();
+
+            // 5. 開始計時倒數
+            startTimer();
+
+            // 6. 自動播放老師的指令發音 (先說 Mtgsa msa 再說指令)
+            setTimeout(() => {
+                replayCurrentCommand();
+            }, 300);
+        }
+
+        // 重聽當前指令
+        function replayCurrentCommand() {
+            let fullText = "";
+            if (currentQuestion.hasTeacherSay) {
+                fullText = `Mtgsa msa: ${currentQuestion.command.indigenous}`;
+            } else {
+                // 不說老師說時，直接念指令
+                fullText = `${currentQuestion.command.indigenous}`;
+            }
+            speakTruku(fullText);
+        }
+
+        // 渲染九宮格動作按鈕
+        function renderGameOptions() {
+            const grid = document.getElementById('game-options-grid');
+            grid.innerHTML = '';
+
+            // 複製指令集並進行隨機排序
+            const shuffledCmds = [...COMMANDS].sort(() => Math.random() - 0.5);
+
+            shuffledCmds.forEach(cmd => {
+                const btn = document.createElement('button');
+                btn.onclick = () => handleOptionClick(cmd.id);
+                btn.className = "bg-white hover:bg-emerald-50 text-gray-800 p-4 rounded-2xl shadow-md border-2 border-gray-100 hover:border-emerald-500 active:transform active:scale-95 transition-all flex flex-col items-center justify-center space-y-2 min-h-[110px]";
+                
+                btn.innerHTML = `
+                    <span class="text-3xl">${cmd.icon}</span>
+                    <span class="font-bold text-gray-900 text-sm md:text-base">${cmd.chinese}</span>
+                    <span class="text-[10px] text-gray-400 font-mono">${cmd.indigenous}</span>
+                `;
+                grid.appendChild(btn);
+            });
+        }
+
+        // --- 計時器邏輯 ---
+        function startTimer() {
+            clearInterval(gameTimerInterval);
+            remainingTime = maxTimePerQuestion;
+            updateTimerUI();
+
+            gameTimerInterval = setInterval(() => {
+                remainingTime--;
+                updateTimerUI();
+
+                if (remainingTime <= 0) {
+                    clearInterval(gameTimerInterval);
+                    handleTimeUp();
+                }
+            }, 1000);
+        }
+
+        function updateTimerUI() {
+            const timerEl = document.getElementById('game-timer');
+            const progressEl = document.getElementById('timer-progress-bar');
+            
+            timerEl.innerText = remainingTime;
+            
+            // 計算進度條寬度百分比
+            const percentage = (remainingTime / maxTimePerQuestion) * 100;
+            progressEl.style.width = `${percentage}%`;
+
+            // 時間快不夠時變紅
+            if (remainingTime <= 3) {
+                timerEl.className = "text-lg font-black text-red-500 w-6 text-center animate-ping";
+                progressEl.className = "absolute bottom-0 left-0 h-1.5 bg-red-600 transition-all duration-100";
+            } else {
+                timerEl.className = "text-lg font-black text-yellow-300 w-6 text-center";
+                progressEl.className = "absolute bottom-0 left-0 h-1.5 bg-emerald-500 transition-all duration-100";
+            }
+        }
+
+        // --- 點擊選項後的處理 (關鍵邏輯) ---
+        function handleOptionClick(choiceId) {
+            clearInterval(gameTimerInterval);
+
+            // 修改老師嘴巴形狀恢復微笑
+            document.getElementById('teacher-mouth').setAttribute('d', 'M 44 54 Q 50 62 56 54');
+
+            const isCorrect = determineCorrectness(choiceId);
+            
+            // 儲存至歷史紀錄中
+            gameHistory.push({
+                questionNum: currentQuestionIndex,
+                command: currentQuestion.command,
+                hasTeacherSay: currentQuestion.hasTeacherSay,
+                userChoice: choiceId,
+                isCorrect: isCorrect
+            });
+
+            if (isCorrect) {
+                handleAnswerCorrect();
+            } else {
+                handleAnswerWrong(choiceId);
+            }
+        }
+
+        // 判斷是否答對
+        function determineCorrectness(choiceId) {
+            if (currentQuestion.hasTeacherSay) {
+                // 如果老師「有說」老師說，則玩家點擊的動作必須跟指令一致
+                return choiceId === currentQuestion.command.id;
+            } else {
+                // 如果老師「沒說」老師說，則玩家必須點擊「維持不動」
+                return choiceId === 'STAY_STILL';
+            }
+        }
+
+        // 答對了
+        function handleAnswerCorrect() {
+            playSfx('sound-correct');
+            score += 100 + (remainingTime * 10); // 加上時間加分！
+            updateScoreDisplay();
+
+            // 隨機選擇太魯閣語讚美
+            const praises = ["Malu balay!", "Malu ka nii."];
+            const praiseText = praises[Math.floor(Math.random() * praises.length)];
+            const praiseChinese = praiseText === "Malu balay!" ? "很好！" : "對的。";
+
+            showToast(`答對了！${praiseText} (${praiseChinese})`, "success");
+            
+            // 口說反饋
+            speakTruku(praiseText, () => {
+                setTimeout(() => {
+                    generateQuestion();
+                }, 800);
+            });
+        }
+
+        // 答錯了
+        function handleAnswerWrong(choiceId) {
+            playSfx('sound-wrong');
+            lives--;
+            renderHearts();
+
+            let wrongMsg = "";
+            if (currentQuestion.hasTeacherSay) {
+                if (choiceId === 'STAY_STILL') {
+                    wrongMsg = `老師有說「Mtgsa msa」喔！你應該要做「${currentQuestion.command.chinese}」！`;
+                } else {
+                    wrongMsg = `動作錯啦！應該要做「${currentQuestion.command.chinese}」！`;
+                }
+            } else {
+                wrongMsg = `老師「沒有說」Mtgsa msa！應該要「維持不動」唷！`;
+            }
+
+            showToast(wrongMsg, "error");
+            
+            // 口說反饋：Uxay kiya. (不是這樣)
+            speakTruku("Uxay kiya", () => {
+                setTimeout(() => {
+                    // 轉向「小挑戰」畫面進行補救教學
+                    triggerChallengeScreen();
+                }, 1000);
+            });
+        }
+
+        // 超時處理
+        function handleTimeUp() {
+            playSfx('sound-timeup');
+            lives--;
+            renderHearts();
+
+            gameHistory.push({
+                questionNum: currentQuestionIndex,
+                command: currentQuestion.command,
+                hasTeacherSay: currentQuestion.hasTeacherSay,
+                userChoice: 'TIMEOUT',
+                isCorrect: false
+            });
+
+            showToast("時間到囉！小勇士要更專注聽取指令！", "error");
+
+            setTimeout(() => {
+                triggerChallengeScreen();
+            }, 1200);
+        }
+
+        // --- 更新得分顯示 ---
+        function updateScoreDisplay() {
+            document.getElementById('user-score').innerText = score;
+        }
+
+
+        // --- 小挑戰（答錯補救）邏輯 ---
+        let currentChallengeIndex = 0;
+
+        function triggerChallengeScreen() {
+            // 隨機抽選一條問候語挑戰
+            currentChallengeIndex = Math.floor(Math.random() * CHALLENGES.length);
+            const challenge = CHALLENGES[currentChallengeIndex];
+
+            document.getElementById('challenge-phrase-indigenous').innerText = challenge.indigenous;
+            document.getElementById('challenge-phrase-chinese').innerText = challenge.chinese;
+
+            switchScreen('screen-challenge');
+            
+            // 自動發音問候語
+            setTimeout(() => {
+                speakChallengePhrase();
+            }, 500);
+        }
+
+        // 播放挑戰句發音
+        function speakChallengePhrase() {
+            const challenge = CHALLENGES[currentChallengeIndex];
+            speakTruku(challenge.indigenous);
+        }
+
+        // 完成小挑戰返回遊戲
+        function completeChallenge() {
+            showToast("很好！挑戰成功，回到原任務！", "success");
+            
+            if (lives <= 0) {
+                // 如果沒生命值了，進入結算
+                endGame();
+            } else {
+                // 否則回到遊戲進行下一題
+                switchScreen('screen-game');
+                generateQuestion();
+            }
+        }
+
+
+        // --- 結算與分析報告 ---
+        function endGame() {
+            clearInterval(gameTimerInterval);
+            switchScreen('screen-result');
+
+            const correctCount = gameHistory.filter(h => h.isCorrect).length;
+            document.getElementById('result-correct-count').innerText = `${correctCount} / 10`;
+            document.getElementById('result-score').innerText = score;
+
+            // 判斷給予的徽章
+            const medalEl = document.getElementById('result-medal');
+            const titleEl = document.getElementById('result-title');
+            const descEl = document.getElementById('result-desc');
+
+            if (correctCount === 10) {
+                medalEl.innerText = "👑";
+                titleEl.innerText = "太魯閣聽辨大酋長！";
+                descEl.innerText = "太厲害了！你完全聽懂了主令官的太魯閣語指令，並且能在最快的反應內辨識有沒有說「Mtgsa msa」。你是部落的超級智慧小勇士！";
+            } else if (correctCount >= 8) {
+                medalEl.innerText = "🥇";
+                titleEl.innerText = "卓越精英小勇士！";
+                descEl.innerText = "非常好！你聽辨了絕大多數的太魯閣語指令，對「Mtgsa msa」的陷阱題也瞭如指掌，是大家學習的典範！";
+            } else if (correctCount >= 6) {
+                medalEl.innerText = "🥈";
+                titleEl.innerText = "部落聽力守護者！";
+                descEl.innerText = "很不錯！你已經掌握了大部分的動作指令。再稍微專注一點、多多特訓，你一定能拿到大酋長皇冠的！";
+            } else {
+                medalEl.innerText = "🏹";
+                titleEl.innerText = "努力實習的小獵人";
+                descEl.innerText = "這是一次很好的練習！太魯閣語的指令比較長，只要回到「學習卡」多聽幾次拼音、跟讀，下次你一定能大躍進！加油！";
+            }
+
+            // 渲染答題精熟度分析
+            renderAnalysis();
+        }
+
+        // 各單字答題狀況分析
+        function renderAnalysis() {
+            const container = document.getElementById('result-analysis-grid');
+            container.innerHTML = '';
+
+            // 計算每個指令的出題與答對比例
+            COMMANDS.forEach(cmd => {
+                const cmdQuestions = gameHistory.filter(h => h.command.id === cmd.id);
+                const cmdTotal = cmdQuestions.length;
+                const cmdCorrect = cmdQuestions.filter(h => h.isCorrect).length;
+
+                let progressColor = "bg-red-500";
+                let statusText = "需要多練習 ❌";
+                let percent = 0;
+
+                if (cmdTotal > 0) {
+                    percent = Math.round((cmdCorrect / cmdTotal) * 100);
+                    if (percent >= 100) {
+                        progressColor = "bg-emerald-600";
+                        statusText = "完全掌握 ✨";
+                    } else if (percent >= 50) {
+                        progressColor = "bg-yellow-500";
+                        statusText = "已掌握一半 👍";
+                    }
+                } else {
+                    // 如果這題沒有被抽到
+                    percent = 100;
+                    progressColor = "bg-gray-400";
+                    statusText = "本次未測試 🔍";
+                }
+
+                const analysisCard = document.createElement('div');
+                analysisCard.className = "bg-gray-50 p-4 rounded-xl border border-gray-100 flex items-center justify-between";
+                
+                analysisCard.innerHTML = `
+                    <div class="flex items-center space-x-3">
+                        <span class="text-2xl bg-white p-2 rounded-lg shadow-sm">${cmd.icon}</span>
+                        <div>
+                            <span class="font-extrabold text-gray-900">${cmd.indigenous}</span>
+                            <span class="text-xs text-gray-500 block">${cmd.chinese} (出題 ${cmdTotal} 次)</span>
+                        </div>
+                    </div>
+                    <div class="text-right flex flex-col justify-center items-end">
+                        <span class="text-xs font-bold text-gray-600 mb-1">${statusText}</span>
+                        <div class="w-24 bg-gray-200 rounded-full h-2">
+                            <div class="${progressColor} h-2 rounded-full" style="width: ${percent}%"></div>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(analysisCard);
+            });
+        }
+    </script>
+</body>
+</html>
